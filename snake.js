@@ -2,6 +2,7 @@ const cvs = document.getElementById("snakeCanvas"); // canvas defined in html fi
 const ctx = cvs.getContext('2d'); 
 const countScore = document.getElementById("score"); // used to count scores
 const errors = document.getElementById("errors"); // used to report errors
+const appleSound = document.getElementById("AppleSound"); // sound
 
 const ROW = 20; // number of rows
 const COL = COLUMN = 20; // number of columns
@@ -11,6 +12,20 @@ const SNAKESQUARE = "GREEN"; // snake colour
 const APPLE = "RED"; // apple colour
 const BLUEAPPLE = "BLUE"; // blue apple colour
 
+function sound(src) {
+  this.sound = document.createElement("audio");
+  this.sound.src = src;
+  this.sound.setAttribute("preload", "auto");
+  this.sound.setAttribute("controls", "none");
+  this.sound.style.display = "none";
+  document.body.appendChild(this.sound);
+  this.play = function(){
+    this.sound.play();
+  }
+  this.stop = function(){
+    this.sound.pause();
+  }
+}
 
 // draw a square
 function drawSquare (x, y, colour) { // coordinates and colour of square
@@ -112,10 +127,17 @@ liveArray[snakeHead.corx][snakeHead.cory] = 1;
 // check if game is over
 let gameOver = false;
 function checkCollision () {
-  if (snakeHead.corx >= 20 || snakeHead.corx < 0) gameOver = true; 
-  else if (snakeHead.cory >= 20 || snakeHead.cory < 0) gameOver = true; 
+  if (snakeHead.corx >= 20 || snakeHead.corx < 0) {
+    makeGameOverSound ();
+    gameOver = true; 
+  }
+  else if (snakeHead.cory >= 20 || snakeHead.cory < 0) {
+    makeGameOverSound ();
+    gameOver = true; 
+  }
   else if (snakeArray[snakeHead.corx][snakeHead.cory] == 1 ) {
     gameOver = true;
+    makeGameOverSound ();
   }
 }
 
@@ -135,12 +157,14 @@ function checkApple (isInit) {
       errors.innerHTML = "apple type error!!!";
     }
     if (!isInit && snakeArray[snakeHead.corx][snakeHead.cory] == 2) {
+      makeAppleSound ();
       snakeLength = snakeLength + 3;
       actualizeBoard(3);
       score += snakeLength - 3;
       countScore.innerHTML = score;
     }
     else if (!isInit && snakeArray[snakeHead.corx][snakeHead.cory] == 3) {
+      makeBlueAppleSound ();
       let tmpScore = Math.floor(0.7 * snakeLength);
       let oldLength = snakeLength;
       snakeLength = Math.max(Math.floor(0.3 * snakeLength), 1);
@@ -254,3 +278,18 @@ function CONTROL (event) {
 };
 
 mainGameLoop ();
+
+function makeAppleSound () {
+  let mySound = new sound("sounds/apple.mp3");
+  mySound.play();
+}
+
+function makeBlueAppleSound () {
+  let mySound = new sound("sounds/blueapple.mp3");
+  mySound.play();
+}
+
+function makeGameOverSound () {
+  let mySound = new sound("sounds/gameover.mp3");
+  mySound.play();
+}
