@@ -6,16 +6,20 @@
 
 <body>
 
-  <div>My Snake Game</div>
+  <div style="text-align: center; font-size: 25px;">My Snake Game</div>
 
-  <canvas id="snakeCanvas" width="400" height="400"></canvas>
+  <canvas 
+  id="snakeCanvas" width="400" height="400" style = "display: block;
+  position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto"
+  ></canvas>
 
-  <div>
-    Your Score: <div id = "score">0</div>
+  <div style="text-align: center; font-size: 25px;">
+    Your Score: <div id = "score", style="text-align: center; display: inline-block; font-size: 25px;">0</div>
   </div>
 
-  <div id = "errors", style="color:red;"> </div>
+  <div id = "errors", style="color:red; text-align: center; font-size: 25px;"> </div>
 
+  <script src="constArrays.js"></script>
   <script src="snake.js"></script>
 
 </body>
