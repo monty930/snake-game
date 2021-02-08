@@ -1,6 +1,7 @@
 const cvs = document.getElementById("snakeCanvas"); // canvas defined in html file
 const ctx = cvs.getContext('2d'); 
 const countScore = document.getElementById("score"); // used to count scores
+const errors = document.getElementById("errors"); // used to report errors
 
 const ROW = 20; // number of rows
 const COL = COLUMN = 20; // number of columns
@@ -21,17 +22,38 @@ function drawSquare (x, y, colour) { // coordinates and colour of square
   ctx.strokeRect(x*SQ, y*SQ, SQ, SQ); // draw stroke: coordinates and size of square
 }
 
-let snakeArray = []; // arr - array of snake - squares (1) vacants (0) and food (2)
+let snakeArray = []; // array of snake - squares (1) vacants (0) and food (2)
+let liveArray = []; //array of live duration of each snake - squares
+
+function zeroArray () {
+  for (i = 0; i <ROW; i++) {
+    snakeArray[i] = [];
+    for (j = 0; j < COL; j++) {
+        snakeArray[i][j] = 0;
+    }
+  }
+}
+
+zeroArray ();
 
 for (i = 0; i <ROW; i++) {
-  snakeArray[i] = [];
+  liveArray[i] = [];
   for (j = 0; j < COL; j++) {
-      snakeArray[i][j] = 0;
+    liveArray[i][j] = 0;
+  }
+}
+
+function actualizeBoard (mode) {
+  for (i = 0; i < ROW; i++) {
+    for (j = 0; j < COL; j++) {
+        if (liveArray[i][j] == 1 && mode == -1) snakeArray[i][j] = 0;
+        if (liveArray[i][j] > 0) liveArray[i][j] = liveArray[i][j] + mode;
+    }
   }
 }
 
 // draw the board
-function drawBoard(){
+function drawBoard () {
   for (i = 0; i < ROW; i++) {
       for (j = 0; j < COL; j++) {
           if (snakeArray[i][j] == 0) drawSquare(i, j, VACANT);
@@ -43,29 +65,29 @@ function drawBoard(){
 
 drawBoard();
 
-let snakeLength = 1;
+let snakeLength = 8;
 
 // generate random square number not being snake - square
-function randomPiece () { 
+function randomSquare () { 
   let r = randomN = Math.floor(Math.random() * (ROW * COL - snakeLength));
   let counter = 0;
   for (i = 0; i < ROW; i++) {
       for (j = 0; j < COL; j++) {
           if (snakeArray[i][j] == 0) {
-              if (counter === r) return (i, j);
+              if (counter === r) return {corx: i, cory: j};
               counter++;
           }
       }
   }
-  return false;
   console.log("error");
+  errors.innerHTML = "generate random numbers error!!!";
+  return {corx: 0, cory: 0};
 }
 
 let dir = "EAST";
 
-// snake's head and tail coordinates
+// snake's head coordinates
 let snakeHead = {corx: 10, cory: 10};
-let snakeTail = {corx: 3, cory: 10};
 snakeArray[3][10] = 1;
 snakeArray[4][10] = 1;
 snakeArray[5][10] = 1;
@@ -75,20 +97,43 @@ snakeArray[8][10] = 1;
 snakeArray[9][10] = 1;
 snakeArray[10][10] = 1;
 
+liveArray[3][10] = 1;
+liveArray[4][10] = 2;
+liveArray[5][10] = 3;
+liveArray[6][10] = 4;
+liveArray[7][10] = 5;
+liveArray[8][10] = 6;
+liveArray[9][10] = 7;
+liveArray[10][10] = 8;
+
 // check if game is over
 let gameOver = false;
 function checkCollision () {
   if (snakeHead.corx >= 20 || snakeHead.corx < 0) gameOver = true; 
   else if (snakeHead.cory >= 20 || snakeHead.cory < 0) gameOver = true; 
   else if (snakeArray[snakeHead.corx][snakeHead.cory] == 1 ) {
-    console.log("patrz:");
-    console.log(snakeHead.corx);
-    console.log(snakeHead.cory);
     gameOver = true;
   }
 }
 
 drawBoard();
+
+let score = 0;
+
+function checkApple (isInit) {
+  if (snakeArray[snakeHead.corx][snakeHead.cory] == 2 || isInit) {
+    let apple = randomSquare();
+    snakeArray[apple.corx][apple.cory] = 2;
+    snakeLength = snakeLength + 3;
+    actualizeBoard(3);
+    if (!isInit) {
+      score += snakeLength - 3;
+      countScore.innerHTML = score;
+    }
+  }
+}
+
+checkApple (true);
 
 // moves the snake in indicated direction
 function moveSnake () {
@@ -109,33 +154,60 @@ function moveSnake () {
   snakeHead.cory = snakeHead.cory + move.ver;
   checkCollision();
   if (!gameOver) {
+    checkApple(false);
     snakeArray[snakeHead.corx][snakeHead.cory] = 1;
-    snakeArray[snakeTail.corx][snakeTail.cory] = 0;
-    snakeTail.corx = snakeTail.corx + move.hor;
-    snakeTail.cory = snakeTail.cory + move.ver;
-    console.log(snakeTail.corx);
-    console.log(snakeTail.cory);
-    console.log("...");
+    liveArray[snakeHead.corx][snakeHead.cory] = snakeLength;
+    actualizeBoard (-1);
     drawBoard();
   }
 }
+
+let gameOverAnimation = 0;
 
 // main game loop
 let loopStart = Date.now ();
 function mainGameLoop () {
   let now = Date.now ();
-    let dt = now - loopStart;
-    if(dt > 100){
-        moveSnake ();
-        loopStart = Date.now ();
+  let dt = now - loopStart;
+  if(dt > 100){
+    if (!gameOver) moveSnake ();
+    else if (gameOverAnimation < 7) {
+      handleGameOver (gameOverAnimation % 2);
+      gameOverAnimation = gameOverAnimation + 1;
     }
-  if( !gameOver){
-    requestAnimationFrame (mainGameLoop);
+    loopStart = Date.now ();
   }
-  else console.log("GAME OVER");
+  requestAnimationFrame (mainGameLoop);
 };
 
 mainGameLoop();
+
+function handleGameOver (mode) {
+  tempArray = 
+  [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+   [0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0],
+   [0, 0, 0, 2, 0, 0, 2, 0, 2, 0, 0, 2, 2, 2, 0, 2, 2, 0, 0, 0, 0, 0],
+   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+  if (mode == 1) zeroArray ();
+  else snakeArray = tempArray;
+  drawBoard();
+}
 
 document.addEventListener("keydown", CONTROL);
 
